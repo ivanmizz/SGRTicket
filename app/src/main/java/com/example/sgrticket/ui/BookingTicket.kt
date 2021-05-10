@@ -1,4 +1,4 @@
-package com.example.sgrticket
+package com.example.sgrticket.ui
 
 import android.content.Context
 import android.content.Intent
@@ -9,68 +9,55 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
-import android.widget.Toast
-import com.example.sgrticket.databinding.ActivityLoginBinding
-import com.example.sgrticket.ui.MainActivity2
+import com.example.sgrticket.MainActivity
+import com.example.sgrticket.R
+import com.example.sgrticket.databinding.ActivityBookingTicketBinding
 import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 
+private lateinit var binding: ActivityBookingTicketBinding
 
-private lateinit var binding: ActivityLoginBinding
-lateinit var progressBar: ProgressBar
-class LoginActivity : AppCompatActivity() {
-
-
+class BookingTicket : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityLoginBinding.inflate(layoutInflater)
+        setContentView(R.layout.activity_booking_ticket)
 
-        var view = binding.root
-
-        setContentView(view)
-        progressBar = binding.progress
-
-        binding.btnLogin.setOnClickListener {
-            val login = MyAsyncTask(applicationContext)
-            login.execute()
-
-        }
-        binding.txtSignUp.setOnClickListener{
-            val toSignIn = Intent(applicationContext, SignupActivity::class.java)
-            startActivity(toSignIn)
-        }
+        binding = ActivityBookingTicketBinding.inflate(layoutInflater)
+        setContentView(binding.root)
     }
-
-    companion object {
-        class MyAsyncTask internal constructor(context: Context) : AsyncTask<String, String, String>() {
-            lateinit var con:HttpURLConnection
+    companion object{
+        class SignUpAsyncTask internal constructor(context: Context) : AsyncTask<String, String, String>() {
+            lateinit var con: HttpURLConnection
             lateinit var resulta:String
             val builder = Uri.Builder()
-            private val cont:Context=context
+            private val cont: Context =context
+
             override fun onPreExecute() {
                 super.onPreExecute()
+                val phone: String = binding.txtPhone.text.toString()
+                val source: String = binding.txtCurrentLocation.text.toString()
+                val destination: String = binding.txtDestination.text.toString()
+                val tdatetime: String = binding.txtTravelDate.text.toString()
 
+                val progressBar= ProgressBar(cont)
                 progressBar.isIndeterminate=true
                 progressBar.visibility= View.VISIBLE
-
-                val phone: String = binding.phoneNumber.text.toString()
-                val pass: String = binding.password.text.toString()
-
+                builder .appendQueryParameter("source", source)
                 builder .appendQueryParameter("phone", phone)
-                builder .appendQueryParameter("password", pass)
-                builder .appendQueryParameter("key", "oooo")
+                builder .appendQueryParameter("destination", destination)
+                builder .appendQueryParameter("tdatetime", tdatetime)
             }
 
             override fun doInBackground(vararg params: String?):  String? {
                 try {
 
                     var query = builder.build().encodedQuery
-                    val url: String = "https://ridiculous-successe.000webhostapp.com/sgrTicket/login.php"
+                    val url: String = "https://ridiculous-successe.000webhostapp.com/sgrTicket/allTickets.php"
                     val obj = URL(url)
                     con = obj.openConnection() as HttpURLConnection
-                    con.setRequestMethod("GET")
+                    con.setRequestMethod("POST")
                     con.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)")
                     con.setRequestProperty("Accept-Language", "UTF-8")
                     con.setDoOutput(true)
@@ -87,27 +74,29 @@ class LoginActivity : AppCompatActivity() {
                 } catch (e: java.lang.Exception) {
                     Log.e("Fail 2", e.toString())
                 }
-                return null;
+                return resulta;
             }
             override fun onPostExecute(result: String?) {
                 super.onPostExecute(result)
-                progressBar.visibility = View.GONE
-                var json_data = JSONObject(resulta)
-                val code: Int = json_data.getInt("code")
+
+                var jsonData = JSONObject(resulta)
+                val code: Int = jsonData.getInt("code")
                 Log.e("data",code.toString())
                 if (code == 1) {
-                    Toast.makeText(cont, "Login Successful", Toast.LENGTH_SHORT).show()
+                    //val com: JSONArray = json_data.getJSONArray("userdetails")
+                    //val comObject = com[0] as JSONObject
+                    //Log.e("data",""+comObject.optString("fname"))
 
-                    val toMain = Intent(cont, MainActivity2 ::class.java)
+                    val toMain = Intent(cont, MainActivity::class.java)
                     toMain.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                    cont.run {
-                        startActivity(toMain)
-                    }
+                    cont.startActivity(toMain)
+
                 }
             }
-
-
         }
 
     }
 }
+
+
+
